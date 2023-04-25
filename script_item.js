@@ -5,20 +5,21 @@ let itemsData;
 
 // TODO #2.1: Edit group number
 const getGroupNumber = () => {
-  return 99;
+  return 1;
 };
+
 
 // TODO #2.2: Show group members
 const showGroupMembers = async () => {
+  const options = {
+    method: "GET",
+    credentials: "include",
+  };
   const member_list = document.getElementById("member-list");
   member_list.innerHTML = "";
   const member_dropdown = document.getElementById("name-to-add");
   member_dropdown.innerHTML =
     "<option value='0'>-- เลือกผู้ฝากซื้อ --</option>";
-  const options = {
-    method: "GET",
-    credentials: "include",
-  };
   await fetch(`http://${backendIPAddress}/items/members`, options)
     .then((response) => response.json())
     .then((data) => {
@@ -28,7 +29,10 @@ const showGroupMembers = async () => {
           <li>${member.full_name}</li>
           `;
         // ----------------- FILL IN YOUR CODE UNDER THIS AREA ONLY ----------------- //
-        member_dropdown.innerHTML += ``;
+        const option = document.createElement("option");
+        option.value = member.full_name;
+        option.text = member.full_name;
+        member_dropdown.add(option);
         // ----------------- FILL IN YOUR CODE ABOVE THIS AREA ONLY ----------------- //
       });
     })
@@ -37,9 +41,15 @@ const showGroupMembers = async () => {
 
 // TODO #2.3: Send Get items ("GET") request to backend server and store the response in itemsData variable
 const getItemsFromDB = async () => {
-  console.log(
-    "This function should fetch 'get items' route from backend server."
-  );
+  const options = {
+    method: "GET",
+    credentials: "include",
+  };
+  itemsData = await fetch(`http://${backendIPAddress}/items`, options)
+  .then((response) => {
+    console.log(response)
+    return response.json()})
+  .catch((error) => console.error(error));
 };
 
 // TODO #2.4: Show items in table (Sort itemsData variable based on created_date in ascending order)
@@ -47,15 +57,17 @@ const showItemsInTable = (itemsData) => {
   const table_body = document.getElementById("main-table-body");
   table_body.innerHTML = "";
   // ----------------- FILL IN YOUR CODE UNDER THIS AREA ONLY ----------------- //
-
+  itemsData.sort((a, b) => {
+    return new Date(a.created_date) - new Date(b.created_date);
+  });
   // ----------------- FILL IN YOUR CODE ABOVE THIS AREA ONLY ----------------- //
   itemsData.map((item) => {
     // ----------------- FILL IN YOUR CODE UNDER THIS AREA ONLY ----------------- //
     table_body.innerHTML += `
         <tr id="${item.item_id}">
             <td>${item.item}</td>
-            <td>Name</td>
-            <td>Price</td>
+            <td>${item.name}</td>
+            <td>${item.price}</td>
             <td><button class="delete-row" onclick="deleteItem('${item.item_id}')">ลบ</button></td>
         </tr>
         `;
@@ -68,17 +80,39 @@ const addItem = async () => {
   const item = document.getElementById("item-to-add").value;
   const name = document.getElementById("name-to-add").value;
   const price = document.getElementById("price-to-add").value;
+  const newItem = {
+    name: name,
+    price: price,
+    item: item,
+  };
+  const options = {
+    method : "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(newItem)
 
-  console.log(
-    "This function should fetch 'add item' route from backend server and update items in the table."
-  );
+  }
+  let items = await fetch(`http://${backendIPAddress}/items`, options)
+  .then((data) => {
+      // Update the table with the new data
+      redrawDOM(data);
+    })
 };
 
 // TODO 2.6: Send Delete an item ("DELETE") request to backend server and update items in the table
 const deleteItem = async (item_id) => {
-  console.log(
-    "This function should fetch 'delete item' route in backend server and update items in the table."
-  );
+  const options = {
+    method: "DELETE",
+    credentials: "include",
+  };
+  let dItem = await fetch(`http://${backendIPAddress}/items/${item_id}`, options)
+  .then((data) => {
+    // Update the table with the new data
+    redrawDOM(data);
+  })
+  .catch((error) => console.error(error));
 };
 
 const redrawDOM = () => {
